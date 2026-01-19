@@ -8,17 +8,17 @@ import MuseScore 3.0
 
 MuseScore {
 
-    menuPath: "Plugins." + qsTr("Export practice files")
+    menuPath: "Plugins." + qsTr("Export practice files (multivox)")
     version: "0.0.0"
     requiresScore: true
     pluginType: "dialog"
-    id: practiceExport
+    id: multivox
     description: qsTr("Export score as PDF, Midi, MusicXML and individual staff MP3s.")
 
     Component.onCompleted: {
         if (mscoreMajorVersion >= 4) {
-            practiceExport.title = qsTr("Export score as PDF, Midi, MusicXML and individual staff MP3s.");
-            practiceExport.categoryCode = "export";
+            multivox.title = qsTr("Export score as PDF, Midi, MusicXML and individual staff MP3s.");
+            multivox.categoryCode = "export";
         }
     }
 
@@ -38,7 +38,7 @@ MuseScore {
         // check MuseScore version
         if (mscoreMajorVersion != 3 ||
             mscoreMinorVersion != 6) {
-            practiceExport.visible = false;
+            multivox.visible = false;
             versionError.open();
             return;
         }
@@ -228,11 +228,11 @@ MuseScore {
 
             onAccepted: {
                 exportFiles();
-                practiceExport.parent.Window.window.close();
+                multivox.parent.Window.window.close();
             }
 
             onRejected: {
-                practiceExport.parent.Window.window.close();
+                multivox.parent.Window.window.close();
             }
 
         }
@@ -277,7 +277,7 @@ MuseScore {
         title: qsTr("Finished")
         text: qsTr("Export of practice files has finished.")
         onAccepted: {
-            practiceExport.parent.Window.window.close();
+            multivox.parent.Window.window.close();
         }
     }
 
