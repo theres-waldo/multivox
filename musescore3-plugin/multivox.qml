@@ -103,14 +103,7 @@ MuseScore {
         var volumes = getCurrentVolumes();
 
         // Export full score
-        writeScore(curScore, exportFolder.text+"/"+baseFileName.text+".pdf", "pdf");
-        writeScore(curScore, exportFolder.text+"/"+baseFileName.text+".mid", "mid");
-        writeScore(curScore, exportFolder.text+"/"+baseFileName.text+".musicxml", "musicxml");
         writeScore(curScore, exportFolder.text+"/"+baseFileName.text+".mp3", "mp3");
-
-        // Export other excerpts as pdf
-        for (var excerpt in curScore.excerpts)
-            writeScore(curScore.excerpts[excerpt].partScore, exportFolder.text+"/"+baseFileName.text+"-"+curScore.excerpts[excerpt].title+".pdf", "pdf");
 
         // Export individual parts as mp3
         for (var part in curScore.parts) {
