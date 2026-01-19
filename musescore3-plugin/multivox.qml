@@ -107,8 +107,8 @@ MuseScore {
 
         // Export individual parts as mp3
         for (var part in curScore.parts) {
-            // Silence the other parts
             for (var otherPart in volumes)
+            // Lower volume on other parts
                 if (otherPart != part)
                     for (var instrument in volumes[otherPart])
                         for (var channel in volumes[otherPart][instrument])
