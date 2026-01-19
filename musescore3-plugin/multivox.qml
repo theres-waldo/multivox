@@ -57,26 +57,31 @@ MuseScore {
     property int extraLeft: exportDialog.anchors.leftMargin ? exportDialog.anchors.leftMargin : extraMargin
     property int extraRight: exportDialog.anchors.rightMargin ? exportDialog.anchors.rightMargin : extraMargin
 
-    function getCurrentVolumes() {
+    function getCurrentState() {
         var result = [];
         for (var part in curScore.parts) {
             result[part] = [];
             for (var instrument in curScore.parts[part].instruments) {
                 result[part][instrument] = [];
                 for (var channel in curScore.parts[part].instruments[instrument].channels) {
-                    result[part][instrument][channel] = curScore.parts[part].instruments[instrument].channels[channel].volume;
+                    result[part][instrument][channel] = {};
+                    result[part][instrument][channel].volume = curScore.parts[part].instruments[instrument].channels[channel].volume;
+                    result[part][instrument][channel].midiProgram = curScore.parts[part].instruments[instrument].channels[channel].midiProgram;
                 }
             }
         }
         return result;
     }
 
-    function restoreVolumes(volumes) {
-        for (var part in volumes)
-            for (var instrument in volumes[part])
-                for (var channel in volumes[part][instrument])
+    function restoreState(state) {
+        for (var part in state)
+            for (var instrument in state[part])
+                for (var channel in state[part][instrument]) {
                     curScore.parts[part].instruments[instrument].channels[channel].volume =
-                        volumes[part][instrument][channel];
+                        state[part][instrument][channel].volume;
+                    curScore.parts[part].instruments[instrument].channels[channel].midiProgram =
+                        state[part][instrument][channel].midiProgram;
+                }
     }
 
     function debug(obj) {
@@ -99,24 +104,24 @@ MuseScore {
     function exportFiles() {
         curScore.startCmd();
 
-        // Remember current channel volumes
-        var volumes = getCurrentVolumes();
+        // Remember current channel volumes and midi programs
+        var state = getCurrentState();
 
         // Export full score
         writeScore(curScore, exportFolder.text+"/"+baseFileName.text+".mp3", "mp3");
 
         // Export individual parts as mp3
         for (var part in curScore.parts) {
-            for (var otherPart in volumes)
             // Lower volume on other parts
+            for (var otherPart in state)
                 if (otherPart != part)
-                    for (var instrument in volumes[otherPart])
-                        for (var channel in volumes[otherPart][instrument])
+                    for (var instrument in state[otherPart])
+                        for (var channel in state[otherPart][instrument])
                             curScore.parts[otherPart].instruments[instrument].channels[channel].volume *= factorSlider.value/100;
             // Export part
             writeScore(curScore, exportFolder.text+"/"+baseFileName.text+"-"+curScore.parts[part].partName+".mp3", "mp3");
-            // Restore other parts volumes
-            restoreVolumes(volumes);
+            // Restore other parts' volumes and midi programs
+            restoreState(state);
         }
 
         curScore.endCmd();
