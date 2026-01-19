@@ -118,6 +118,15 @@ MuseScore {
                     for (var instrument in state[otherPart])
                         for (var channel in state[otherPart][instrument])
                             curScore.parts[otherPart].instruments[instrument].channels[channel].volume *= factorSlider.value/100;
+
+            // Change midi program of current part to "1" (piano)
+            // (per https://midiprog.com/program-numbers/)
+            for (var instrument in curScore.parts[part].instruments) {
+              for (var channel in curScore.parts[part].instruments[instrument].channels) {
+                curScore.parts[part].instruments[instrument].channels[channel].midiProgram = 1;
+              }
+            }
+
             // Export part
             writeScore(curScore, exportFolder.text+"/"+baseFileName.text+"-"+curScore.parts[part].partName+".mp3", "mp3");
             // Restore other parts' volumes and midi programs
