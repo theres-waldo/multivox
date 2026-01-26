@@ -111,24 +111,26 @@ MuseScore {
         writeScore(curScore, exportFolder.text+"/"+baseFileName.text+".mp3", "mp3");
 
         // Export individual parts as mp3
-        for (var part in curScore.parts) {
+        for (var partIndex in curScore.parts) {
+            var part = curScore.parts[partIndex];
+
             // Lower volume on other parts
             for (var otherPart in state)
-                if (otherPart != part)
+                if (otherPart != partIndex)
                     for (var instrument in state[otherPart])
                         for (var channel in state[otherPart][instrument])
                             curScore.parts[otherPart].instruments[instrument].channels[channel].volume *= factorSlider.value/100;
 
             // Change midi program of current part to "1" (piano)
             // (per https://midiprog.com/program-numbers/)
-            for (var instrument in curScore.parts[part].instruments) {
-              for (var channel in curScore.parts[part].instruments[instrument].channels) {
-                curScore.parts[part].instruments[instrument].channels[channel].midiProgram = 1;
+            for (var instrument in part.instruments) {
+              for (var channel in part.instruments[instrument].channels) {
+                part.instruments[instrument].channels[channel].midiProgram = 1;
               }
             }
 
             // Export part
-            writeScore(curScore, exportFolder.text+"/"+baseFileName.text+"-"+curScore.parts[part].partName+".mp3", "mp3");
+            writeScore(curScore, exportFolder.text+"/"+baseFileName.text+"-"+part.partName+".mp3", "mp3");
             // Restore other parts' volumes and midi programs
             restoreState(state);
         }
