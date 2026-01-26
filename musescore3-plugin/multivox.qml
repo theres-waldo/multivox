@@ -114,6 +114,11 @@ MuseScore {
         for (var partIndex in curScore.parts) {
             var part = curScore.parts[partIndex];
 
+            // Skip piano accompaniment
+            if (part.partName == "Piano") {
+                continue;
+            }
+
             // Lower volume on other parts
             for (var otherPart in state)
                 if (otherPart != partIndex)
