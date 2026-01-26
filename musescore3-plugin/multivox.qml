@@ -101,41 +101,176 @@ MuseScore {
         console.log(obj);
     }
 
+    function getStaff(staffIdx) {
+        // This should just be `curScore.staves[staffIdx]`, but this doesn't 
+        // work in 3.6 due to a bug: https://github.com/musescore/MuseScore/pull/7480
+        // As a workaround, find an element on the staff and use Element.staff
+        var seg = curScore.firstMeasure.firstSegment;
+        while (seg != null) {
+            // Segment.elementAt() takes a track index.
+            // There are 4 tracks per staff, hence the multiplication by 4.
+            // (It may be more robust to try the other 3 tracks in the staff as well.)
+            var e = seg.elementAt(staffIdx * 4);
+            if (e != null) {
+                return e.staff;
+            }
+            seg = seg.next;
+        }
+    }
+
+    function getFirstNote(chord) {
+        for (var noteIdx in chord.notes) {
+            if (noteIdx != null) {
+                return chord.notes[noteIdx];
+            }
+        }
+        return null;
+    }
+
+    function firstStaffForPart(part) {
+        for (var staffIdx = 0; staffIdx < curScore.nstaves; staffIdx++) {
+            var staff = getStaff(staffIdx);
+            if (staff.part.partName == part.partName) {
+                return staffIdx;
+            }
+        }
+        return -1;
+    }
+
+    function isDominantPart(part) {
+        // We don't have a better way to do this beyond 
+        return part.partName == "Grand Piano";
+    }
+
+    function getOrCreateDominantStaff() {
+        // There appears to be no way to delete a part. So, to avoid adding
+        // additional staves whenever the plugin is invoked, stash some
+        // state to remember whether we've created the dominant part already.
+        // We use a metadata tag for this, and store the index of the dominant
+        // part's (first) staff as the associated value.
+        var dominantStaffIdx;
+        var dominantStaffMetadata = curScore.metaTag("multivoxDominantStaffIdx");
+        if (dominantStaffMetadata != "") {
+            // We've previously created a dominant part.
+            // Look up its staff index.
+            dominantStaffIdx = parseInt(dominantStaffMetadata);
+        } else {
+            // It would be nice to name this part something like "Dominant",
+            // but there appears to be no API for doing this.
+            curScore.appendPart("grand-piano");        
+
+            // A piano part has two staves. Just use the first one for simplicity.
+            dominantStaffIdx = curScore.nstaves - 2;
+
+            curScore.setMetaTag("multivoxDominantStaffIdx", dominantStaffIdx);
+
+            // The addition of the new part needs to be "flushed" with
+            // an endCmd/startCmd pair for subsequent actions to see it.
+            curScore.endCmd();
+            curScore.startCmd();
+        }
+        return dominantStaffIdx;
+    }
+
+    function selectStaffForCopying(staffIdx) {
+        // Copying is straightforward: select the entire extent of the staff.
+        curScore.selection.selectRange(
+            curScore.firstMeasure.firstSegment.tick,
+            curScore.lastSegment.tick + 1,
+            staffIdx,
+            staffIdx + 1);
+    }
+
+    function selectStaffForPasting(staffIdx) {
+        // Pasting is trickier. Musescore refuses to paste into a type of
+        // selection created with Selection.selectRange(). Instead we have
+        // to use Selection.select() on the first selectable element.
+        var seg = curScore.firstMeasure.firstSegment;
+        var firstSelectableElement = null;
+        while (seg != null) {
+            var e = seg.elementAt(staffIdx * 4);
+            if (e != null) {
+                if (e.type == Element.REST) {
+                    firstSelectableElement = e;
+                    break;
+                }
+                if (e.type == Element.CHORD) {
+                    var firstNote = getFirstNote(e);
+                    if (firstNote != null) {
+                        firstSelectableElement = firstNote;
+                        break;
+                    }
+                }
+            }
+            seg = seg.next;
+        }
+        if (firstSelectableElement != null) {
+            curScore.selection.select(firstSelectableElement);
+            return true;
+        }
+        return false;
+    }
+
+    // Helper function to export a single track.
+    // Returns an empty string on success and a string describing what went wrong
+    // on failure.
+    function exportTrackForPart(part, dominantStaffIdx) {
+        // Copy current part to dominant staff
+        var staffIdx = firstStaffForPart(part);
+        if (staffIdx == -1) {
+            return "can't find staff for part";
+        }
+        selectStaffForCopying(staffIdx);
+        cmd("copy");
+        if (!selectStaffForPasting(dominantStaffIdx)) {
+            return "failed to select dominant staff for pasting";
+        }
+        cmd("paste");
+        curScore.selection.clear();
+
+        // Export part
+        writeScore(curScore, exportFolder.text+"/"+baseFileName.text+"-"+part.partName+".mp3", "mp3");
+        return "";
+    }
+
     function exportFiles() {
         curScore.startCmd();
 
-        // Remember current channel volumes and midi programs
-        var state = getCurrentState();
-
         // Export full score
         writeScore(curScore, exportFolder.text+"/"+baseFileName.text+".mp3", "mp3");
+
+        // Create a new part for the "dominant" track.
+        // It would be nice to give it a part name like "Dominant", but
+        // I haven't found a way to do this.
+        var dominantStaffIdx = getOrCreateDominantStaff();
+
+        // Remember current channel volumes and midi programs
+        // (Note: the plugin currently only changes volumes, but a previous
+        //        version changed midi programs as well and I kept around
+        //        the functionality to save and restore both.)
+        var state = getCurrentState();
 
         // Export individual parts as mp3
         for (var partIndex in curScore.parts) {
             var part = curScore.parts[partIndex];
 
-            // Skip piano accompaniment
-            if (part.partName == "Piano") {
+            // Skip piano accompaniment (if any) and dominant part
+            if (part.partName == "Piano" || isDominantPart(part)) {
                 continue;
             }
 
             // Lower volume on other parts
             for (var otherPart in state)
-                if (otherPart != partIndex)
+                if (otherPart != partIndex && !isDominantPart(curScore.parts[otherPart]))
                     for (var instrument in state[otherPart])
                         for (var channel in state[otherPart][instrument])
                             curScore.parts[otherPart].instruments[instrument].channels[channel].volume *= factorSlider.value/100;
 
-            // Change midi program of current part to "1" (piano)
-            // (per https://midiprog.com/program-numbers/)
-            for (var instrument in part.instruments) {
-              for (var channel in part.instruments[instrument].channels) {
-                part.instruments[instrument].channels[channel].midiProgram = 1;
-              }
+            var error = exportTrackForPart(part, dominantStaffIdx);
+            if (error != "") {
+                console.log("Error: track for part '" + part.partName + "' was not written: " + error);
             }
 
-            // Export part
-            writeScore(curScore, exportFolder.text+"/"+baseFileName.text+"-"+part.partName+".mp3", "mp3");
             // Restore other parts' volumes and midi programs
             restoreState(state);
         }
