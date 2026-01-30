@@ -10,10 +10,10 @@ following:
 
  * An mp3 file containing all voices at equal volume
 
- * For each part, an mp3 file where the part in question has
-   its instrument changed to piano (to make it easier to
-   distinguish it from other voices) while the other parts
-   have their volumes lowered by a configurable amount.
+ * For each part, an mp3 file where the part in question is
+   emphasized. This is accomplished by playing its notes
+   with both piano and voice, and playing the other parts
+   with voice at a lower volume.
 
 Due to bugs in MuseScore 4's plugin support, the plugin currently
 requires MuseScore 3 to work.
