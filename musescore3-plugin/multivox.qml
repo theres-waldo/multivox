@@ -25,7 +25,10 @@ MuseScore {
     Settings {
         id: settings
         category: qsTr("Export practice files")
-        property alias volumeFactor: factorSlider.value
+        property alias dominantVolumeFactor: dominantVolumeSlider.value
+        property alias dominantPianoVolumeFactor: dominantPianoVolumeSlider.value
+        property alias nonDominantVolumeFactor: nonDominantVolumeSlider.value
+        property alias accompanimentVolumeFactor: accompanimentVolumeSlider.value
         property alias exportFolder: exportFolder.text
     }
 
@@ -238,6 +241,12 @@ MuseScore {
         return "";
     }
 
+    function adjustVolume(state, partIdx, volume) {
+        for (var instrument in state[partIdx])
+            for (var channel in state[partIdx][instrument])
+                curScore.parts[partIdx].instruments[instrument].channels[channel].volume *= volume/100;
+    }
+
     function exportFiles() {
         curScore.startCmd();
 
@@ -262,12 +271,21 @@ MuseScore {
                 continue;
             }
 
-            // Lower volume on other parts
-            for (var otherPart in state)
-                if (otherPart != partIndex && !isDominantPart(curScore.parts[otherPart]))
-                    for (var instrument in state[otherPart])
-                        for (var channel in state[otherPart][instrument])
-                            curScore.parts[otherPart].instruments[instrument].channels[channel].volume *= factorSlider.value/100;
+            // Adjust volumes per settings
+            for (var otherPartIdx in state) {
+                var otherPart = curScore.parts[otherPartIdx];
+                var volume;                
+                if (otherPartIdx == partIndex) {
+                    volume = dominantVolumeSlider.value;
+                } else if (isDominantPart(otherPart)) {
+                    volume = dominantPianoVolumeSlider.value;
+                } else if (isAccompaniment(otherPart)) {
+                    volume = accompanimentVolumeSlider.value;
+                } else {
+                    volume = nonDominantVolumeSlider.value;
+                }
+                adjustVolume(state, otherPartIdx, volume);
+            }
 
             var error = exportTrackForPart(part, dominantStaffIdx);
             if (error != "") {
@@ -303,18 +321,18 @@ MuseScore {
 
             Row {
                 Label {
-                    anchors.verticalCenter: factorSlider.verticalCenter
-                    text: qsTr("Volume for other instruments:")
+                    anchors.verticalCenter: dominantVolumeSlider.verticalCenter
+                    text: qsTr("Volume for dominant part (voice):")
                 }
                 Slider {
-                    id: factorSlider
+                    id: dominantVolumeSlider
                     from: 0
                     to: 100
                     anchors.leftMargin: 4
                     // https://doc.qt.io/qt-5/qtquickcontrols2-customize.html
                     handle: Rectangle {
-                        x: factorSlider.leftPadding + factorSlider.visualPosition * (factorSlider.availableWidth - width)
-                        y: factorSlider.topPadding + factorSlider.availableHeight / 2 - height / 2
+                        x: dominantVolumeSlider.leftPadding + dominantVolumeSlider.visualPosition * (dominantVolumeSlider.availableWidth - width)
+                        y: dominantVolumeSlider.topPadding + dominantVolumeSlider.availableHeight / 2 - height / 2
                         implicitWidth: 12
                         implicitHeight: 12
                         radius: 12
@@ -322,8 +340,89 @@ MuseScore {
                     }
                 }
                 Label {
-                    text: Math.floor(factorSlider.value)+"%"
-                    anchors.verticalCenter: factorSlider.verticalCenter
+                    text: Math.floor(dominantVolumeSlider.value)+"%"
+                    anchors.verticalCenter: dominantVolumeSlider.verticalCenter
+                    anchors.leftMargin: 4
+                }
+            }
+
+            Row {
+                Label {
+                    anchors.verticalCenter: dominantPianoVolumeSlider.verticalCenter
+                    text: qsTr("Volume for dominant part (piano):")
+                }
+                Slider {
+                    id: dominantPianoVolumeSlider
+                    from: 0
+                    to: 100
+                    anchors.leftMargin: 4
+                    // https://doc.qt.io/qt-5/qtquickcontrols2-customize.html
+                    handle: Rectangle {
+                        x: dominantPianoVolumeSlider.leftPadding + dominantPianoVolumeSlider.visualPosition * (dominantPianoVolumeSlider.availableWidth - width)
+                        y: dominantPianoVolumeSlider.topPadding + dominantPianoVolumeSlider.availableHeight / 2 - height / 2
+                        implicitWidth: 12
+                        implicitHeight: 12
+                        radius: 12
+                        border.color: "#bdbebf"
+                    }
+                }
+                Label {
+                    text: Math.floor(dominantPianoVolumeSlider.value)+"%"
+                    anchors.verticalCenter: dominantPianoVolumeSlider.verticalCenter
+                    anchors.leftMargin: 4
+                }
+            }
+
+            Row {
+                Label {
+                    anchors.verticalCenter: nonDominantVolumeSlider.verticalCenter
+                    text: qsTr("Volume for non-dominant parts (voice):")
+                }
+                Slider {
+                    id: nonDominantVolumeSlider
+                    from: 0
+                    to: 100
+                    anchors.leftMargin: 4
+                    // https://doc.qt.io/qt-5/qtquickcontrols2-customize.html
+                    handle: Rectangle {
+                        x: nonDominantVolumeSlider.leftPadding + nonDominantVolumeSlider.visualPosition * (nonDominantVolumeSlider.availableWidth - width)
+                        y: nonDominantVolumeSlider.topPadding + nonDominantVolumeSlider.availableHeight / 2 - height / 2
+                        implicitWidth: 12
+                        implicitHeight: 12
+                        radius: 12
+                        border.color: "#bdbebf"
+                    }
+                }
+                Label {
+                    text: Math.floor(nonDominantVolumeSlider.value)+"%"
+                    anchors.verticalCenter: nonDominantVolumeSlider.verticalCenter
+                    anchors.leftMargin: 4
+                }
+            }
+
+            Row {
+                Label {
+                    anchors.verticalCenter: accompanimentVolumeSlider.verticalCenter
+                    text: qsTr("Volume for accompaniment:")
+                }
+                Slider {
+                    id: accompanimentVolumeSlider
+                    from: 0
+                    to: 100
+                    anchors.leftMargin: 4
+                    // https://doc.qt.io/qt-5/qtquickcontrols2-customize.html
+                    handle: Rectangle {
+                        x: accompanimentVolumeSlider.leftPadding + accompanimentVolumeSlider.visualPosition * (accompanimentVolumeSlider.availableWidth - width)
+                        y: accompanimentVolumeSlider.topPadding + accompanimentVolumeSlider.availableHeight / 2 - height / 2
+                        implicitWidth: 12
+                        implicitHeight: 12
+                        radius: 12
+                        border.color: "#bdbebf"
+                    }
+                }
+                Label {
+                    text: Math.floor(accompanimentVolumeSlider.value)+"%"
+                    anchors.verticalCenter: accompanimentVolumeSlider.verticalCenter
                     anchors.leftMargin: 4
                 }
             }
