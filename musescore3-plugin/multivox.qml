@@ -239,9 +239,7 @@ MuseScore {
         // Export full score
         writeScore(curScore, exportFolder.text+"/"+baseFileName.text+".mp3", "mp3");
 
-        // Create a new part for the "dominant" track.
-        // It would be nice to give it a part name like "Dominant", but
-        // I haven't found a way to do this.
+        // Get or create the part for the "dominant" track
         var dominantStaffIdx = getOrCreateDominantStaff();
 
         // Remember current channel volumes and midi programs
