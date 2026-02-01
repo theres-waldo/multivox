@@ -273,6 +273,13 @@ MuseScore {
             restoreState(state);
         }
 
+        // Clean up by deleting the contents of the dominant staff.
+        // This ensures that e.g. if the plugin is invoked again, the full score
+        // doesn't have piano notes for the most recently exported part.
+        selectStaffForCopying(dominantStaffIdx);
+        cmd("delete");
+        curScore.selection.clear();
+
         curScore.endCmd();
         exportFinishedDialog.open();
     }
