@@ -142,6 +142,11 @@ MuseScore {
         return part.partName == "Grand Piano";
     }
 
+    function isAccompaniment(part) {
+        // We should probably have a better way to do this
+        return part.partName == "Piano";
+    }
+
     function getOrCreateDominantStaff() {
         // There appears to be no way to delete a part. So, to avoid adding
         // additional staves whenever the plugin is invoked, stash some
@@ -253,7 +258,7 @@ MuseScore {
             var part = curScore.parts[partIndex];
 
             // Skip piano accompaniment (if any) and dominant part
-            if (part.partName == "Piano" || isDominantPart(part)) {
+            if (isAccompaniment(part) || isDominantPart(part)) {
                 continue;
             }
 
