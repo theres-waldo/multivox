@@ -138,7 +138,7 @@ MuseScore {
     }
 
     function isDominantPart(part) {
-        // We don't have a better way to do this beyond 
+        // We don't have a better way to do this
         return part.partName == "Grand Piano";
     }
 
