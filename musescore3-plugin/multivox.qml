@@ -237,7 +237,7 @@ MuseScore {
         curScore.selection.clear();
 
         // Export part
-        writeScore(curScore, exportFolder.text+"/"+baseFileName.text+"-"+part.partName+".mp3", "mp3");
+        writeScore(curScore, exportFolder.text+"/"+part.partName+" - "+baseFileName.text+".mp3", "mp3");
         return "";
     }
 
@@ -251,7 +251,7 @@ MuseScore {
         curScore.startCmd();
 
         // Export full score
-        writeScore(curScore, exportFolder.text+"/"+baseFileName.text+".mp3", "mp3");
+        writeScore(curScore, exportFolder.text+"/All parts - "+baseFileName.text+".mp3", "mp3");
 
         // Get or create the part for the "dominant" track
         var dominantStaffIdx = getOrCreateDominantStaff();
