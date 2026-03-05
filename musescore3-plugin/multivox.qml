@@ -237,7 +237,11 @@ MuseScore {
         curScore.selection.clear();
 
         // Export part
-        writeScore(curScore, exportFolder.text+"/"+part.partName+" - "+baseFileName.text+".mp3", "mp3");
+        var partNameForExport = part.shortName;
+        // Remove dots and spaces, e.g. "S. 1" --> "S1".
+        partNameForExport = partNameForExport.split(".").join("");
+        partNameForExport = partNameForExport.split(" ").join("");
+        writeScore(curScore, exportFolder.text+"/"+partNameForExport+" - "+baseFileName.text+".mp3", "mp3");
         return "";
     }
 
