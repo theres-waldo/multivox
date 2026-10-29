@@ -241,7 +241,7 @@ MuseScore {
         // Remove dots and spaces, e.g. "S. 1" --> "S1".
         partNameForExport = partNameForExport.split(".").join("");
         partNameForExport = partNameForExport.split(" ").join("");
-        writeScore(curScore, exportFolder.text+"/"+partNameForExport+" - "+baseFileName.text+".mp3", "mp3");
+        writeScore(curScore, exportFolder.text+"/"+partNameForExport+"-"+baseFileName.text+".mp3", "mp3");
         return "";
     }
 
